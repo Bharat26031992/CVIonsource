@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bharat Singh Rawat, Ph.D. | Beam Physics Laboratory</title>
     <style>
         :root {
@@ -24,6 +24,8 @@
             cursor: none;
             overflow-x: hidden;
             scroll-behavior: smooth;
+            /* Prevent scrolling while interacting with the beam */
+            touch-action: none; 
         }
 
         #bg-canvas {
@@ -53,6 +55,17 @@
             position: fixed; width: 160px; height: 100px;
             pointer-events: none; z-index: 100000;
             transform: translate(-50%, -50%);
+            transition: transform 0.2s ease;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            #ring-cusp-cursor { transform: translate(-50%, -50%) scale(0.75); }
+            #control-panel { top: 10px; left: 10px; transform: scale(0.85); transform-origin: top left; }
+            .lab-card h1 { font-size: 1.8rem !important; }
+            #diagnostic-hud { bottom: 100px; right: 10px; transform: scale(0.8); transform-origin: bottom right; }
+            #terminal-log { height: 60px; font-size: 0.55rem; }
+            .container { padding: 80px 15px 100px; }
         }
 
         .chamber-wall {
@@ -259,6 +272,10 @@
         let mX = 0, mY = 0, bX = 0, bY = 0;
         let audioCtx, gainNode, filter, logInterval;
         let beamEnergy = 5.0;
+        let isTouch = false;
+
+        // Detection for touch devices to apply Y-offset
+        window.addEventListener('touchstart', () => { isTouch = true; }, {once: true});
 
         // --- ION BACKGROUND ---
         let particles = [];
@@ -361,13 +378,8 @@
             terminal.scrollTop = terminal.scrollHeight;
         }
 
-        window.addEventListener('mousemove', (e) => {
-            mX = e.clientX; mY = e.clientY;
-            const hovered = document.elementFromPoint(mX, mY)?.closest('[data-color]');
-            if (hovered) document.documentElement.style.setProperty('--current-beam-color', hovered.getAttribute('data-color'));
-        });
-
-        window.addEventListener('mousedown', () => {
+        // --- UNIFIED INPUT LOGIC ---
+        const startBeam = () => {
             initAudio(); spark.style.opacity = 1; generateSpark();
             logInterval = setInterval(logData, 1800);
             setTimeout(() => {
@@ -376,16 +388,34 @@
                 if (gainNode) gainNode.gain.setTargetAtTime(0.12, audioCtx.currentTime, 0.05);
                 drawDiagnostics();
             }, 50);
-        });
+        };
 
-        window.addEventListener('mouseup', () => {
+        const stopBeam = () => {
             beam.style.width = '0'; spark.style.opacity = 0; hud.classList.remove('active');
             clearInterval(logInterval);
             if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+        };
+
+        window.addEventListener('pointerdown', (e) => {
+            if(e.target.tagName === 'INPUT' || e.target.tagName === 'A') return;
+            startBeam();
+        });
+
+        window.addEventListener('pointerup', stopBeam);
+        window.addEventListener('pointercancel', stopBeam);
+
+        window.addEventListener('pointermove', (e) => {
+            mX = e.clientX; mY = e.clientY;
+            const hovered = document.elementFromPoint(mX, mY)?.closest('[data-color]');
+            if (hovered) document.documentElement.style.setProperty('--current-beam-color', hovered.getAttribute('data-color'));
         });
 
         function animate() {
-            bX += (mX - bX) * 0.15; bY += (mY - bY) * 0.15;
+            bX += (mX - bX) * 0.15; 
+            // If touch, offset Y by -70px so the finger doesn't block the ion source
+            const targetY = isTouch ? mY - 70 : mY;
+            bY += (targetY - bY) * 0.15;
+            
             cursor.style.left = bX + 'px'; cursor.style.top = bY + 'px';
             requestAnimationFrame(animate);
         }
