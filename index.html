@@ -342,7 +342,8 @@
             constructor() { this.reset(); }
             reset() {
                 this.x = 92 + Math.random() * 8;
-                this.y = 100;
+                const initialSpotSize = 50; // Increase this number to make the mouth wider
+        	this.y = 100 + (Math.random() - 0.5) * initialSpotSize;
                 const divAngle = (Math.max(2, 45 - (neutCurrent * 4.3)) * 0.018);
                 const angle = (Math.random() - 0.5) * divAngle;
                 const speed = 6 + beamEnergy * 0.8 + Math.random() * 2.5;
