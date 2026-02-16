@@ -279,8 +279,8 @@
             beamHumOsc = audioCtx.createOscillator();
             beamHumGain = audioCtx.createGain();
             beamHumLfo = audioCtx.createOscillator();
-            beamHumOsc.type = 'sawtooth';
-            beamHumOsc.frequency.setValueAtTime(92, audioCtx.currentTime);
+            beamHumOsc.type = 'triangle';
+            beamHumOsc.frequency.setValueAtTime(100, audioCtx.currentTime);
             beamHumLfo.type = 'sine';
             beamHumLfo.frequency.setValueAtTime(0.8, audioCtx.currentTime);
             const lfoGain = audioCtx.createGain();
