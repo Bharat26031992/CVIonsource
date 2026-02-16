@@ -154,6 +154,7 @@
             <h3 style="color: var(--plasma-cyan); font-weight: 200; margin-top:5px;">// ION SOURCE & BEAM DIAGNOSTICS EXPERT</h3>
             <p style="color:#ccc;">Expert in manipulating charged particle beams with 7+ years of experience in the design of ion sources, transport systems, and digital twin modeling.</p>
             <a href="https://bharat26031992.github.io/AEgIS_Outreach_Game/" target="_blank" class="btn-game">PROJECT_DT</a>
+           
             <a href="https://bharat26031992.github.io/Project-Hbar/" target="_blank" class="btn-game">PROJECT_HBAR</a>
         </section>
         <h2 class="module-title">[ 01: EMPLOYMENT HISTORY ]</h2>
@@ -278,7 +279,7 @@
             beamHumOsc = audioCtx.createOscillator();
             beamHumGain = audioCtx.createGain();
             beamHumLfo = audioCtx.createOscillator();
-            beamHumOsc.type = 'sawtooth';
+            beamHumOsc.type = 'triangle';
             beamHumOsc.frequency.setValueAtTime(92, audioCtx.currentTime);
             beamHumLfo.type = 'sine';
             beamHumLfo.frequency.setValueAtTime(0.8, audioCtx.currentTime);
