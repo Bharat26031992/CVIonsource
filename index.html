@@ -281,7 +281,7 @@
             beamHumLfo = audioCtx.createOscillator();
             beamHumOsc.type = 'square';
             beamHumOsc.frequency.setValueAtTime(92, audioCtx.currentTime);
-            beamHumLfo.type = 'sine';
+            beamHumLfo.type = 'square';
             beamHumLfo.frequency.setValueAtTime(0.8, audioCtx.currentTime);
             const lfoGain = audioCtx.createGain();
             lfoGain.gain.setValueAtTime(4, audioCtx.currentTime);
