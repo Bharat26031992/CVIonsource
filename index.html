@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bharat Singh Rawat, Ph.D. | Beam Physics Laboratory</title>
+    <title>Bharat Singh Rawat, Ph.D.</title>
     <style>
         :root {
             --plasma-cyan: #00ffff;
@@ -13,434 +13,350 @@
             --phosphor-green: #00ff41;
             --warning-orange: #ffae00;
             --extraction-purple: #bc13fe;
+            --electron-gold: #fff176;
             --current-beam-color: var(--plasma-cyan);
         }
-
         body, html {
             margin: 0; padding: 0;
             background-color: var(--vacuum-black);
             color: #d1d1d1;
             font-family: 'Fira Code', monospace;
-            cursor: none;
             overflow-x: hidden;
             scroll-behavior: smooth;
-            /* Allow vertical scrolling, but stop the "bounce" effect on mobile */
-            touch-action: pan-y; 
-            overscroll-behavior-y: none;
+            touch-action: pan-y;
+            cursor: default;
         }
-
-        #bg-canvas {
-            position: fixed; inset: 0;
-            z-index: -2;
-            pointer-events: none;
-        }
-
+        #bg-canvas { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
         #ui-grid {
             position: fixed; inset: 0;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
-            z-index: -1;
-            /* This ensures we can detect clicks on the background */
-            pointer-events: all;
+            z-index: -1; pointer-events: all; cursor: none;
         }
-
         #control-panel {
             position: fixed; top: 20px; left: 20px;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.92);
             border: 1px solid var(--plasma-cyan);
-            padding: 10px; z-index: 9999;
-            pointer-events: all;
+            padding: 15px; z-index: 9999;
+            pointer-events: all; border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,255,255,0.2);
         }
-        input[type=range] { accent-color: var(--plasma-cyan); cursor: none; }
-
+        input[type=range] { accent-color: var(--plasma-cyan); width: 140px; cursor: pointer; display: block; margin: 5px 0 10px; }
+        
         #ring-cusp-cursor {
-            position: fixed; width: 160px; height: 100px;
+            position: fixed; width: 400px; height: 200px;
             pointer-events: none; z-index: 100000;
-            transform: translate(-50%, -50%);
+            transform: translate(-46px, -100px); 
         }
-
-        /* Mobile Responsive Adjustments */
-        @media (max-width: 768px) {
-            #ring-cusp-cursor { transform: translate(-50%, -50%) scale(0.7); }
-            #control-panel { transform: scale(0.8); transform-origin: top left; top: 10px; left: 10px; }
-            .lab-card h1 { font-size: 1.8rem !important; }
-            #diagnostic-hud { bottom: 100px; right: 10px; transform: scale(0.8); transform-origin: bottom right; }
-            #terminal-log { height: 70px; font-size: 0.55rem; }
-            .container { padding: 80px 15px 100px; }
-        }
-
         .chamber-wall {
-            width: 90px; height: 50px;
-            background: rgba(15, 15, 25, 0.95);
-            border: 1.5px solid #555;
-            position: absolute; top: 25px; left: 0;
-            border-radius: 2px;
+            width: 90px; height: 52px; background: rgba(20, 20, 30, 0.98);
+            border: 2px solid #666; position: absolute; top: 74px; left: 0; border-radius: 2px;
         }
-
-        .lines-svg { position: absolute; inset: 0; pointer-events: none; }
-
-        #spark-path {
-            stroke: white; stroke-width: 1.2;
-            filter: drop-shadow(0 0 4px var(--current-beam-color));
-            opacity: 0;
-        }
-
         #extraction-beam {
-            position: absolute; top: 49px; left: 92px;
-            height: 6px; width: 0;
-            background: linear-gradient(90deg, white, var(--current-beam-color), transparent);
-            filter: blur(2.5px);
-            transition: width 0.3s ease-out;
-            box-shadow: 0 0 15px var(--current-beam-color);
+            position: absolute; top: 50px; left: 92px; height: 100px; width: 0;
+            background: linear-gradient(90deg, white 0%, var(--current-beam-color) 25%, transparent 100%);
+            filter: blur(3px);
+            /* Starts at aperture size (48-52%), transition ensures smooth narrowing */
+            clip-path: polygon(0% 48%, 100% 0%, 100% 100%, 0% 52%);
+            transition: width 0.2s ease-out, clip-path 0.1s linear;
+            pointer-events: none;
+            opacity: 0.85;
         }
-
+        #electron-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+        #neutralizer-filament {
+            position: absolute; left: 94px; top: 80px; width: 4px; height: 40px;
+            background: #333; border-radius: 2px; transition: 0.3s; z-index: 10;
+        }
         .magnet { position: absolute; width: 10px; height: 6px; border: 0.5px solid #000; }
         .north { background: var(--magnet-north); }
         .south { background: var(--magnet-south); }
-
+        
         #diagnostic-hud {
-            position: fixed; bottom: 85px; right: 20px; 
-            width: 180px; background: rgba(0, 10, 0, 0.95);
-            border: 1px solid var(--phosphor-green);
-            padding: 10px; opacity: 0; transition: 0.3s; z-index: 9999;
+            position: fixed; bottom: 20px; right: 20px; width: 200px; background: rgba(0, 10, 0, 0.95);
+            border: 1px solid var(--phosphor-green); padding: 12px; opacity: 0; transition: 0.3s; z-index: 9999;
+            border-radius: 4px; pointer-events: none;
         }
         #diagnostic-hud.active { opacity: 1; }
-        .diag-label { color: var(--phosphor-green); font-size: 0.55rem; margin-bottom: 3px; }
-
-        #terminal-log {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: 85px; background: rgba(0, 5, 0, 0.98);
-            border-top: 1px solid var(--phosphor-green);
-            padding: 8px; overflow-y: auto;
-            font-size: 0.65rem; color: var(--phosphor-green);
-            z-index: 9998;
-        }
-        #terminal-log p::before { content: "> "; color: #fff; }
-
-        .container { max-width: 950px; margin: 0 auto; padding: 120px 20px 120px; position: relative; z-index: 10; pointer-events: none; }
-        .lab-card, .module-title, .btn-game, .site-link { pointer-events: all; }
+        .diag-label { color: var(--phosphor-green); font-size: 0.6rem; margin-bottom: 4px; text-transform: uppercase;}
         
+        .container { max-width: 950px; margin: 0 auto; padding: 120px 20px 100px; position: relative; z-index: 10; pointer-events: none; }
         .lab-card {
-            background: rgba(10, 10, 15, 0.9);
-            border: 1px solid #222; border-left: 4px solid var(--plasma-cyan);
-            padding: 30px; margin-bottom: 40px;
+            background: rgba(10, 10, 15, 0.94); border: 1px solid #222; border-left: 4px solid var(--plasma-cyan);
+            padding: 30px; margin-bottom: 40px; pointer-events: all;
         }
         h2.module-title { color: var(--warning-orange); text-transform: uppercase; letter-spacing: 3px; border-bottom: 1px solid #333; padding-bottom: 8px; font-size: 1rem; margin-top: 40px;}
-        .sub-role { color: var(--plasma-cyan); font-weight: bold; font-size: 1rem; display: block; margin-top: 20px;}
-        .date-tag { color: #888; font-size: 0.8rem; margin-bottom: 8px; display: block; }
+        .sub-role { color: var(--plasma-cyan); font-weight: bold; font-size: 1.1rem; display: block; margin-top: 20px;}
+        .date-tag { color: #888; font-size: 0.85rem; margin-bottom: 8px; display: block; }
         ul { list-style: none; padding: 0; }
         li::before { content: ">> "; color: var(--current-beam-color); }
-        li { margin-bottom: 10px; font-size: 0.9rem; line-height: 1.6; }
+        li { margin-bottom: 10px; font-size: 0.95rem; line-height: 1.6; }
         .pub-box { background: rgba(255,255,255,0.03); padding: 10px; border-left: 2px solid var(--extraction-purple); margin-bottom: 8px; font-size: 0.85rem; }
-        
         .btn-game {
             display: inline-block; padding: 12px 25px; border: 1px solid var(--warning-orange);
-            color: var(--warning-orange); text-decoration: none; font-weight: bold;
-            transition: 0.3s; margin-top: 15px; font-size: 0.85rem;
+            color: var(--warning-orange); text-decoration: none; font-weight: bold; transition: 0.3s; margin-top: 15px; font-size: 0.85rem;
         }
         .btn-game:hover { background: var(--warning-orange); color: #000; box-shadow: 0 0 15px var(--warning-orange); }
-        .site-link { color: var(--plasma-cyan); text-decoration: none; font-size: 0.8rem; border-bottom: 1px dashed var(--plasma-cyan); }
     </style>
 </head>
 <body>
-
     <canvas id="bg-canvas"></canvas>
     <div id="ui-grid"></div>
 
     <div id="control-panel">
-        <div style="color:var(--plasma-cyan); font-size:0.55rem; margin-bottom:5px;">> BEAM_CONTROL_UNIT</div>
-        <label style="font-size:0.5rem;">EXTRACTION_V: <span id="v-val">5.0</span> kV</label><br>
-        <input type="range" id="v-slider" min="1" max="10" step="0.1" value="5" style="width:100%;">
-        <div style="margin-top: 10px;"><a href="https://bharatbharat22.wixsite.com/website" target="_blank" class="site-link">Work Portfolio</a></div>
+        <div style="color:var(--plasma-cyan); font-size:0.6rem; font-weight:bold; margin-bottom:10px;">[ ION_SOURCE_CONTROL ]</div>
+        <label style="font-size:0.55rem;">EXTRACTION_V: <span id="v-val">5.0</span> kV</label>
+        <input type="range" id="v-slider" min="1" max="10" step="0.1" value="5">
+        
+        <label style="font-size:0.55rem; color:var(--warning-orange);">NEUTRALIZER_I: <span id="i-val">0.0</span> mA</label>
+        <input type="range" id="i-slider" min="0" max="10" step="0.1" value="0">
+        
+        <div style="margin-top: 10px;"><a href="https://bharatbharat22.wixsite.com/website" target="_blank" style="color:var(--plasma-cyan); text-decoration:none; font-size:0.8rem;">View Full Portfolio</a></div>
     </div>
 
     <div id="ring-cusp-cursor">
-        <svg class="lines-svg" viewBox="0 0 160 100">
-            <g opacity="0.95" stroke="var(--plasma-cyan)" stroke-width="1.2" fill="none">
-                <path d="M5 25 Q 25 50 45 25" /> <path d="M45 25 Q 65 50 85 25" />
-                <path d="M5 75 Q 25 50 45 75" /> <path d="M45 75 Q 65 50 85 75" />
-                <path d="M25 50 H 65" stroke-dasharray="2,2" stroke="white" opacity="0.5"/>
-            </g>
-            <polyline id="spark-path" fill="none" points=""/>
-        </svg>
+        <canvas id="electron-canvas" width="400" height="200"></canvas>
         <div id="extraction-beam"></div>
         <div class="chamber-wall"></div>
-        <div class="magnet north" style="top:19px; left:8px;"></div><div class="magnet south" style="top:19px; left:40px;"></div><div class="magnet north" style="top:19px; left:72px;"></div>
-        <div class="magnet south" style="top:75px; left:8px;"></div><div class="magnet north" style="top:75px; left:40px;"></div><div class="magnet south" style="top:75px; left:72px;"></div>
+        <div id="neutralizer-filament"></div>
+        <div class="magnet north" style="top:68px; left:8px;"></div>
+        <div class="magnet south" style="top:68px; left:40px;"></div>
+        <div class="magnet north" style="top:68px; left:72px;"></div>
+        <div class="magnet south" style="top:126px; left:8px;"></div>
+        <div class="magnet north" style="top:126px; left:40px;"></div>
+        <div class="magnet south" style="top:126px; left:72px;"></div>
     </div>
 
     <div id="diagnostic-hud">
-        <div class="diag-label">> BEAM_PROFILE</div>
+        <div class="diag-label">Beam Profile</div>
         <canvas id="gaussianCanvas" width="180" height="40"></canvas>
-        <div class="diag-label" style="margin-top: 5px;">> PHASE_SPACE</div>
+        <div class="diag-label" style="margin-top: 10px;">Phase Space</div>
         <canvas id="phaseSpaceCanvas" width="180" height="50"></canvas>
-    </div>
-
-    <div id="terminal-log">
-        <p>SYSTEM_BOOT: NOMINAL. AWAITING_BEAM_EXTRACTION...</p>
     </div>
 
     <div class="container">
         <section class="lab-card" data-color="var(--plasma-cyan)">
             <h1 style="font-size: 2.8rem; margin:0;">BHARAT SINGH RAWAT, Ph.D.</h1>
-            <h3 style="color: var(--plasma-cyan); font-weight: 200;">// ION SOURCE AND BEAM DIAGNOSTIC EXPERT</h3>
-            <p style="color: #aaa; max-width: 800px; font-size: 1rem;">Expert in manipulating charged particle beams with over 7 years of experience in the design of ion sources, beam diagnostics, and transport systems.</p>
-            <a href="https://bharat26031992.github.io/AEgIS_Outreach_Game/" target="_blank" class="btn-game">LAUNCH_DIGITAL_TWIN_GAME</a>
+            <h3 style="color: var(--plasma-cyan); font-weight: 200; margin-top:5px;">// ION SOURCE & BEAM DIAGNOSTICS EXPERT</h3>
+            <p style="color:#ccc;">Expert in manipulating charged particle beams with 7+ years of experience in the design of ion sources, transport systems, and digital twin modeling.</p>
+            <a href="https://bharat26031992.github.io/AEgIS_Outreach_Game/" target="_blank" class="btn-game">LAUNCH_AEGIS_DT_GAME</a>
         </section>
 
-        <h2 class="module-title">[ MODULE_01: EMPLOYMENT_HISTORY ]</h2>
+        <h2 class="module-title">[ 01: EMPLOYMENT HISTORY ]</h2>
         <div class="lab-card" data-color="var(--extraction-purple)">
-            <span class="sub-role">Research Associate | University of Liverpool / Cockcroft Institute / CERN </span>
-            <span class="date-tag">2023 — 2026 </span>
+            <span class="sub-role">Research Associate | University of Liverpool / Cockcroft Institute / CERN</span>
+            <span class="date-tag">2023 — 2026</span>
             <ul>
-                <li>Led ballistic antiproton transport optimization utilizing 3D CST Penning Trap models to achieve velocities below 2000 m/s.</li>
-                <li>Identified optimal frequencies for trapping antiprotons in the AEgIS apparatus via Rotating Wall trap simulations.</li>
-                <li>Created a Digital Twin of the Penning Malmberg trap, integrating first principles physics with ML to predict confinement behavior.</li>
-                <li>Executed shift responsibilities including real-time DAQ and cryogenic management for superconducting magnets.</li>
+                <li>Led ballistic antiproton transport optimization utilizing 3D CST Penning Trap models.</li>
+                <li>Creating a Digital Twin of the Penning Malmberg trap apparatus, integrating first principles physics with Machine Learning (ML) models to predict trap behavior and optimize particle confinement.</li>
+                <li> Executing critical on shift responsibilities during beam time, including real-time data acquisition and the management of cryogenic systems for superconducting magnets.</li>
             </ul>
-
-            <span class="sub-role" data-color="var(--warning-orange)">Radiation Protection Engineer | Nuvia India Pvt Limited</span>
-            <span class="date-tag">2018 — 2018 </span>
+            <span class="sub-role">Radiation Protection Engineer | Nuvia India Pvt Limited</span>
+            <span class="date-tag">2018 — 2018</span>
             <ul>
-                <li>Managed occupational radiation exposure at Kakrapar Atomic Power Station adhering to regulatory dose limits.</li>
-                <li>Developed automated dose tracking systems to monitor exposure trends and enable proactive safety interventions.</li>
-                <li>Coordinated with Health Physics and Reactor Management to provide real-time notification of radiological status.</li>
+                <li>Managed occupational radiation exposure at Kakrapar Atomic Power Station.</li>
+                <li>Developed automated dose tracking systems for proactive safety interventions.</li>
+                 <li>Coordinated with the Health Physics and Reactor Management teams to provide real-time notification of dose status.</li>
             </ul>
         </div>
 
-        <h2 class="module-title">[ MODULE_02: RESEARCH_&_EDUCATION ]</h2>
+        <h2 class="module-title">[ 02: RESEARCH & EDUCATION ]</h2>
         <div class="lab-card" data-color="var(--plasma-cyan)">
-            <span class="sub-role">Ph.D. | Homi Bhabha National Institute / IPR </span>
-            <span class="date-tag">2018 — 2024 </span>
+            <span class="sub-role">Ph.D. | Homi Bhabha National Institute / Institute for Plasma Research</span>
+            <span class="date-tag">2018 — 2024</span>
             <ul>
-                <li>Designed a ring cusp ion source for $Ar^{+}$ beams (1-2 keV, 100 mA) with an average current of 0.23 mA per aperture.</li>
-                <li>Improved electrical efficiency by 60-70% by reducing discharge losses to 400-800 W/A.</li>
-                <li>Engineered Parallel Wire Arrays (PWA) and Faraday Cup arrays for real-time monitoring of beam profiles.</li>
-                <li>Achieved 100% space charge neutralization using a hot filament cathode.</li>
-                <li>Optimized ion optics via OPERA-3D (6.5° divergence) and limited grid deformation to < 0.1 mm in ANSYS.</li>
-                <li>Implemented 3-point Abel inversion algorithms in MATLAB and numerical models for 2D plume reconstruction.</li>
+                <li>Designed a ring cusp ion source for Ar⁺ beams (1-2 keV, 100 mA).</li>
+                <li>Utilized CST Studio for magnetic cusp optimization andOPERA-3D for ion optics design, achieving a low beam divergence of ~6.5°. Conducted transient thermo-structural analysis in ANSYS to design a grid mounting system that limited thermal deformation to <0.1 mm.</li>
+                <li>Engineered a nine-channel Parallel Wire Array (PWA) and a Faraday Cup array (FCA) for real-time, in-situ monitoring of ion beam profiles.</li>
             </ul>
 
-            <span class="sub-role">M.Tech. Nuclear Engineering | Pandit Deendayal Petroleum University </span>
-            <span class="date-tag">2015 — 2017 </span>
+            <span class="sub-role">M.Tech. Nuclear Engineering | Pandit Deendayal Petroleum University</span>
+            <span class="date-tag">2015 — 2017</span>
             <ul>
-                <li>Developed a 10 kW Faraday cup capable of measuring 20-30 mA beam current intensities.</li>
-                <li>Engineered cooling systems maintaining copper at 350.6°C to ensure thermal integrity.</li>
-                <li>Calculated suppression voltages (-450V to -500V) via SIMION 8.0 and LORENTZ simulations.</li>
-                <li>Reduced secondary electron yield by 1.15x via optimization of the 30° cone angle geometry.</li>
+                <li>Developed a 10 kW Faraday cup capable of measuring 20-30 mA beam intensities.</li>
+                <li>Designed cooling systems maintaining copper Faraday Cup at 350.6°C for thermal integrity.</li>
+                <li>Calculated suppression voltages (-450V to -500V) via SIMION 8.0 and LORENTZ.</li>
             </ul>
 
-            <span class="sub-role">B.E. Mechanical Engineering | Gujarat Technological University </span>
-            <span class="date-tag">2009 — 2013 </span>
+            <span class="sub-role">B.E. Mechanical Engineering | Gujarat Technological University</span>
+            <span class="date-tag">2009 — 2013</span>
             <ul>
-                <li>Reduced temperature rise per stop by 1.39°C by transitioning to Cast Iron brake components.</li>
-                <li>Mitigated thermal judder, fluid vaporization, and overheating in textile beaming processes.</li>
-                <li>Proposed an air jet impingement system to enhance convection coefficients during idle cycles.</li>
-                <li>Restored lost production capacity (1,600 units/hr) in packaging machinery by resolving mechanical misalignments.</li>
-                <li>Corrected 0.5 mm parallelism errors between base and hexagonal plates in pneumatic ejecting systems.</li>
+                <li>Reduced temperature rise per stop by transitioning to Cast Iron brake components.</li>
+                <li>Mitigated thermal judder and overheating in textile beaming processes.</li>
+                <li>Corrected 0.5 mm parallelism errors in pneumatic ejecting systems.</li>
             </ul>
         </div>
 
-        <h2 class="module-title">[ MODULE_03: PUBLICATIONS_&_SKILLS ]</h2>
-        <div class="lab-card" data-color="var(--extraction-purple)">
-            <div class="pub-box"><b>Instruments (2026):</b> Extraction system for gas curtain ionization profile monitors.</div>
-            <div class="pub-box"><b>IBIC (2025):</b> RPEA design for low energy antimatter experiments.</div>
-            <div class="pub-box"><b>Instruments (2025):</b> Faraday cups: principles, designs, and applications—a review.</div>
-            <div class="pub-box"><b>EXA-LEAP (2024):</b> 3D simulation of mixed plasma confinement at AEgIS.</div>
-            <div class="pub-box"><b>Phys. Rev. Lett. (2024):</b> Positronium Laser Cooling via 1^3S-2^3P Transition.</div>
-            <div class="pub-box"><b>IEEE TPS (2023):</b> Space Charge Neutralization in a Ring Cusp Ion Source.</div>
-            <div class="pub-box"><b>AIP Advances (2022):</b> Ion beam profile measurement using Parallel Wire and Faraday Cup array.</div>
-            
-            <p style="margin-top:25px;"><b>Software Stack:</b> CST Studio, OPERA3D, SIMION, COMSOL, RF Track, ANSYS, ASTRA, MAD-X, Geant4, IBISIMU.</p>
-            <p><b>Outreach:</b> Designed 3D printed Faraday Cup integrated with Red Pitaya. Conducted superconductivity and magnetic levitation demos.</p>
-            <p><b>Languages:</b> English, Hindi, Gujarati (Native), Spanish (B2), Russian (A1).</p>
-        </div>
-    </div>
+        <h2 class="module-title">[ 03: PUBLICATIONS & TECHNICAL SKILLS ]</h2>
+<div class="lab-card" data-color="var(--extraction-purple)">
+    <div class="pub-box"><b>Instruments (2026):</b> Characterization of the extraction system of supersonic gas curtain-based ionization profile monitor for flash proton therapy.</div>
+    
+    <div class="pub-box"><b>IBIC (2025):</b> Design studies of a Retarding Potential Energy Analyser (RPEA) for low energy antimatter experiments.</div>
+    <div class="pub-box"><b>Instruments (2025):</b> Faraday cups: principles, designs, and applications across scientific disciplines—a review.</div>
+    <div class="pub-box"><b>EXA-LEAP (2025):</b> 3D simulation studies of mixed plasma confinement at AEgIS.</div>
+    
+    <div class="pub-box"><b>Phys. Rev. Lett. (2024):</b> Positronium Laser Cooling via the 1³S-2³P Transition with a Broadband Laser Pulse.</div>
+    <div class="pub-box"><b>HBNI Ph.D. Dissertation (2024):</b> Studies on Extraction of an Ion beam and its Transport from a Multi-Cusp Gridded Ion Source.</div>
+    <div class="pub-box"><b>IPAC (2024):</b> Simulation studies for the confinement of antiprotons for the AEgIS experiment.</div>
+    
+    <div class="pub-box"><b>IEEE TPS (2023):</b> Experimental Studies on the Roles of Space Charge Neutralization in a Ring Cusp Ion Source.</div>
+    
+    <div class="pub-box"><b>AIP Advances (2022):</b> Measurement system for ion beam profiles using fixed parallel wires and Faraday cup array.</div>
+    
+    <div class="pub-box"><b>IEEE TPS (2021):</b> Characterization of a Multicusp Ion Source with Two-Grid Extraction System for Studying Extraction and Transport of Ion Beam.</div>
+    
+    <div class="pub-box"><b>ICONE25 (2017):</b> Design and simulation of 10kW Faraday cup for ion beam current.</div>
+    
+    
+    
+    <h2 class="module-title">[ 04: PRESENTATION & TALKS ]</h2>
+<div class="lab-card" data-color="var(--extraction-green)">
+    <div class="pub-box"><b>Invited talk titled "Design tutorial on FC design for low energy antimatter research using CST studio." at CST User day, October 2025, Nottingham, United Kingdom.</div>
+    
+    <div class="pub-box"><b>Contributed talk titled"Digital Twin-Enabled Modeling of Antimatter Beam Control: Insights from AEgIS to EuPRAXIA" at EuPRAXIA-DN Camp II: Science, July 2025, Lisbon, Portugal.</div>
+    <div class="pub-box"><b>Contributed talk titled "Trapping Antiprotons: Modeling Penning-Malmberg Traps for AEgIS at CERN" at SIMULIA Euronorth Regional User Meeting, June, 2025, Manchester, United Kingdom.</div>
+    <div class="pub-box"><b>Contributed talk titled "Design and Simulation of 10 kW Faraday Cup for Ion Beam Current Measurement" 25th International Conference on Nuclear Engineering 2017, Shanghai, China.</div>
+    
+    
+
+    <p style="margin-top:25px;"><b>Software Stack:</b> CST Studio, OPERA3D, SIMION, COMSOL, RF Track, ANSYS, ASTRA, MAD-X, Geant4, IBISIMU.</p>
+    <p><b>Expertise:</b> Ion Source Design, Beam Transport Optimization, Space Charge Neutralization, and Advanced Beam Diagnostics (Faraday Cups and Wire Arrays).</p>
+    <p><b>Outreach:
+     <ul>
+    <li>Designed and 3D printed a Faraday Cup model for outreach demonstrations, integrated with a Red Pitaya circuit board.</li>
+    <li>Assisted in laboratory tours at Daresbury Laboratory, engaging visitors and explaining ongoing research activities.</li>
+    <li>Developed a browser-based interactive game for teaching the concept of electromagnetic confinement in the context of the AEgIS experiment.</li>
+</ul>
+    <p><b>Languages:</b> English, Hindi, Gujarati, Spanish (B2), Russian (A1).</p>
+    <p><b>Hobbies:</b> Playing Chess, Learning languages and musical instruments and travelling.</p>
+</div>
 
     <script>
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
+        const bgCanvas = document.getElementById('bg-canvas');
+        const bgCtx = bgCanvas.getContext('2d');
+        const eCanvas = document.getElementById('electron-canvas');
+        const eCtx = eCanvas.getContext('2d');
         const cursor = document.getElementById('ring-cusp-cursor');
-        const beam = document.getElementById('extraction-beam');
-        const spark = document.getElementById('spark-path');
+        const mainBeam = document.getElementById('extraction-beam');
+        const filament = document.getElementById('neutralizer-filament');
         const hud = document.getElementById('diagnostic-hud');
-        const gCanvas = document.getElementById('gaussianCanvas');
-        const gCtx = gCanvas.getContext('2d');
-        const pCanvas = document.getElementById('phaseSpaceCanvas');
-        const pCtx = pCanvas.getContext('2d');
-        const vSlider = document.getElementById('v-slider');
-        const vVal = document.getElementById('v-val');
-        const terminal = document.getElementById('terminal-log');
+        const gCtx = document.getElementById('gaussianCanvas').getContext('2d');
+        const pCtx = document.getElementById('phaseSpaceCanvas').getContext('2d');
 
-        let mX = 0, mY = 0, bX = 0, bY = 0;
-        let audioCtx, gainNode, filter, logInterval;
-        let beamEnergy = 5.0;
-        let isTouch = false;
-        let isFiring = false;
+        let mX = window.innerWidth/2, mY = window.innerHeight/2, bX = mX, bY = mY;
+        let beamEnergy = 5.0, neutCurrent = 0.0, isFiring = false;
+        let electrons = [];
+        let bgParticles = [];
 
-        // Detect touch input
-        window.addEventListener('touchstart', () => { isTouch = true; }, {once: true});
-
-        // --- ION BACKGROUND ---
-        let particles = [];
-        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        function resize() { bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight; }
         window.onresize = resize; resize();
 
-        class Particle {
-            constructor() { this.reset(); this.x = Math.random() * canvas.width; }
+        class BackgroundParticle {
+            constructor() { this.reset(); this.x = Math.random() * bgCanvas.width; }
+            reset() { this.x = -10; this.y = Math.random() * bgCanvas.height; this.v = 1.5 + Math.random() * 3; this.a = 0.1 + Math.random() * 0.3; }
+            update() { this.x += this.v * (beamEnergy * 0.4); if (this.x > bgCanvas.width) this.reset(); }
+            draw() { bgCtx.fillStyle = `rgba(0, 255, 255, ${this.a})`; bgCtx.beginPath(); bgCtx.arc(this.x, this.y, 1.2, 0, Math.PI*2); bgCtx.fill(); }
+        }
+        for(let i=0; i<80; i++) bgParticles.push(new BackgroundParticle());
+
+        class Electron {
+            constructor() { this.reset(); }
             reset() {
-                this.x = -10;
-                this.y = Math.random() * canvas.height;
-                this.v = 1.5 + Math.random() * 3;
-                this.a = 0.2 + Math.random() * 0.4;
+                this.x = 94; 
+                this.y = 80 + Math.random() * 40; 
+                this.vx = 7 + Math.random() * 10;
+                this.vy = (Math.random() - 0.5) * 5;
+                this.life = 1.0;
             }
             update() {
-                this.x += this.v * (beamEnergy * 0.6);
-                if (this.x > canvas.width) this.reset();
+                this.x += this.vx;
+                this.vy += (100 - this.y) * 0.08; 
+                this.y += this.vy + (Math.random()-0.5)*3; 
+                this.life -= 0.02;
+                if (this.life <= 0 || this.x > 400) this.reset();
             }
             draw() {
-                ctx.fillStyle = `rgba(0, 255, 255, ${this.a})`;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 1.8, 0, Math.PI*2); ctx.fill();
+                eCtx.fillStyle = `rgba(255, 241, 118, ${this.life})`;
+                eCtx.shadowBlur = 6; eCtx.shadowColor = "gold";
+                eCtx.beginPath(); eCtx.arc(this.x, this.y, 1.8, 0, Math.PI*2); eCtx.fill();
+                eCtx.shadowBlur = 0;
             }
         }
-        for(let i=0; i<150; i++) particles.push(new Particle());
+        for(let i=0; i<70; i++) electrons.push(new Electron());
 
-        function animBG() {
-            ctx.clearRect(0,0,canvas.width, canvas.height);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animBG);
-        }
-        animBG();
-
-        const pubs = [
-            "Phys.Rev.Lett_2024: Positronium Laser Cooling via 1S-2P.",
-            "IEEE_TPS_2023: Space Charge Neutralization.",
-            "IPAC_2024: AEgIS antiproton trapping simulations.",
-            "Instruments_2026: Ionization profile monitor extraction.",
-            "IBIC_2025: RPEA design for antimatter experiments."
-        ];
+        document.getElementById('v-slider').oninput = (e) => { 
+            beamEnergy = parseFloat(e.target.value); 
+            document.getElementById('v-val').innerText = beamEnergy.toFixed(1); 
+        };
         
-        let pubQueue = [...pubs].sort(() => Math.random() - 0.5);
+        document.getElementById('i-slider').oninput = (e) => { 
+            neutCurrent = parseFloat(e.target.value); 
+            document.getElementById('i-val').innerText = neutCurrent.toFixed(1);
+            filament.style.background = neutCurrent > 0 ? `rgb(255, ${180 + neutCurrent*7}, 50)` : "#333";
+            filament.style.boxShadow = neutCurrent > 0 ? `0 0 ${neutCurrent * 8}px var(--warning-orange)` : "none";
+        };
 
-        function initAudio() {
-            if (audioCtx) return;
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer; noise.loop = true;
-            filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass'; filter.frequency.value = 400 + (beamEnergy*100);
-            gainNode = audioCtx.createGain(); gainNode.gain.value = 0;
-            noise.connect(filter).connect(gainNode).connect(audioCtx.destination);
-            noise.start();
-        }
-
-        vSlider.addEventListener('input', (e) => {
-            beamEnergy = parseFloat(e.target.value);
-            vVal.innerText = beamEnergy.toFixed(1);
-            if (filter) filter.frequency.setTargetAtTime(400 + (beamEnergy*100), audioCtx.currentTime, 0.1);
-        });
-
-        function generateSpark() {
-            let points = "";
-            for (let i = 0; i < 6; i++) {
-                points += `${10 + (i * 12)},${45 + (Math.random() * 10 - 5)} `;
-            }
-            spark.setAttribute("points", points);
-            if(hud.classList.contains('active')) requestAnimationFrame(generateSpark);
-        }
-
-        function drawDiagnostics() {
-            gCtx.clearRect(0, 0, gCanvas.width, gCanvas.height);
-            gCtx.strokeStyle = '#00ff41'; gCtx.lineWidth = 1; gCtx.beginPath();
-            const sigma = 12 - (beamEnergy * 0.6);
-            for (let x = 0; x < gCanvas.width; x++) {
-                const val = 25 * Math.exp(-Math.pow(x - gCanvas.width/2, 2) / (2 * Math.pow(sigma, 2)));
-                const y = gCanvas.height - 5 - val + (Math.random() * 2);
-                if (x === 0) gCtx.moveTo(x, y); else gCtx.lineTo(x, y);
+        function drawDiagnostics(div) {
+            gCtx.clearRect(0, 0, 180, 40);
+            gCtx.strokeStyle = '#00ff41'; gCtx.lineWidth = 1.5; gCtx.beginPath();
+            const sigma = div / 2.2;
+            for (let x = 0; x < 180; x++) {
+                const val = 32 * Math.exp(-Math.pow(x - 90, 2) / (2 * Math.pow(sigma, 2)));
+                gCtx.lineTo(x, 38 - val + (Math.random()*2));
             }
             gCtx.stroke();
-
-            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-            pCtx.strokeStyle = 'rgba(0, 255, 65, 0.3)'; pCtx.lineWidth = 1;
-            pCtx.beginPath(); pCtx.moveTo(0, pCanvas.height/2); pCtx.lineTo(pCanvas.width, pCanvas.height/2); pCtx.moveTo(pCanvas.width/2, 0); pCtx.lineTo(pCanvas.width/2, pCanvas.height); pCtx.stroke();
-            
-            pCtx.strokeStyle = '#00ff41'; pCtx.lineWidth = 1.2; pCtx.beginPath();
-            pCtx.ellipse(pCanvas.width/2, pCanvas.height/2, 35 - (beamEnergy * 1.5), 8 + (beamEnergy * 1.2), (mX / window.innerWidth - 0.5) * 0.8, 0, 2 * Math.PI);
+            pCtx.clearRect(0, 0, 180, 50);
+            pCtx.strokeStyle = '#00ff41'; pCtx.beginPath();
+            pCtx.ellipse(90, 25, 30, 5 + (div/3.2), (div/42), 0, 2 * Math.PI);
             pCtx.stroke();
-
-            if(hud.classList.contains('active')) requestAnimationFrame(drawDiagnostics);
         }
-
-        function logData() {
-            if (pubQueue.length === 0) pubQueue = [...pubs].sort(() => Math.random() - 0.5);
-            const msg = pubQueue.pop();
-            const time = new Date().toISOString().substr(11, 8);
-            terminal.innerHTML += `<p>[${time}] DATA_AQ: ${msg}</p>`;
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        // --- UNIFIED INPUT LOGIC ---
-        const startBeam = () => {
-            isFiring = true;
-            initAudio(); spark.style.opacity = 1; generateSpark();
-            logInterval = setInterval(logData, 1800);
-            setTimeout(() => {
-                beam.style.width = '2400px'; 
-                hud.classList.add('active');
-                if (gainNode) gainNode.gain.setTargetAtTime(0.12, audioCtx.currentTime, 0.05);
-                drawDiagnostics();
-            }, 50);
-        };
-
-        const stopBeam = () => {
-            isFiring = false;
-            beam.style.width = '0'; spark.style.opacity = 0; hud.classList.remove('active');
-            clearInterval(logInterval);
-            if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
-        };
-
-        // Pointer Events for Global Tracking
-        window.addEventListener('pointerdown', (e) => {
-            // ONLY start beam if clicking the background grid (or empty areas)
-            if (e.target.closest('.lab-card') || 
-                e.target.closest('#control-panel') || 
-                e.target.tagName === 'A' || 
-                e.target.tagName === 'INPUT') {
-                return; // Let native scroll happen
-            }
-            startBeam();
-        });
-
-        window.addEventListener('pointerup', stopBeam);
-        window.addEventListener('pointercancel', stopBeam);
-
-        window.addEventListener('pointermove', (e) => {
-            mX = e.clientX; mY = e.clientY;
-            // Check for section color updates
-            const hovered = document.elementFromPoint(mX, mY)?.closest('[data-color]');
-            if (hovered) document.documentElement.style.setProperty('--current-beam-color', hovered.getAttribute('data-color'));
-        });
 
         function animate() {
-            bX += (mX - bX) * 0.15; 
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgParticles.forEach(p => { p.update(); p.draw(); });
+
+            bX += (mX - bX) * 0.15; bY += (mY - bY) * 0.15;
+            cursor.style.left = bX + 'px'; cursor.style.top = bY + 'px';
+
+            eCtx.clearRect(0, 0, eCanvas.width, eCanvas.height);
+
+            // REAL-TIME PHYSICS: 
+            // 0 mA = Max divergence (45%) | 10 mA = Parallel (2%)
+            const divergence = Math.max(2, 45 - (neutCurrent * 4.3)); 
             
-            // On mobile, if firing, offset the graphic -80px UP so the finger doesn't block it.
-            // If just moving/scrolling, keep it centered.
-            let targetY = mY;
-            if (isTouch && isFiring) targetY -= 80;
-            
-            bY += (targetY - bY) * 0.15;
-            
-            cursor.style.left = bX + 'px'; 
-            cursor.style.top = bY + 'px';
+            if (isFiring) {
+                mainBeam.style.width = '2000px';
+                // Starts narrow at 48/52%, spreads to div/div%
+                mainBeam.style.clipPath = `polygon(0% 48%, 100% ${50-divergence}%, 100% ${50+divergence}%, 0% 52%)`;
+                
+                if (neutCurrent > 0) {
+                    const activeCount = Math.floor(neutCurrent * 7);
+                    for(let i=0; i<activeCount; i++) {
+                        electrons[i].update();
+                        electrons[i].draw();
+                    }
+                }
+                drawDiagnostics(divergence);
+            } else {
+                mainBeam.style.width = '0';
+            }
             requestAnimationFrame(animate);
         }
+
+        window.addEventListener('pointermove', (e) => { 
+            mX = e.clientX; mY = e.clientY; 
+            const el = document.elementFromPoint(mX, mY);
+            cursor.classList.toggle('hidden', !!el?.closest('a, button, input, #control-panel, .btn-game'));
+        });
+        window.addEventListener('pointerdown', (e) => { 
+            if(!e.target.closest('#control-panel, .lab-card, .btn-game')) { 
+                isFiring = true; hud.classList.add('active'); 
+            } 
+        });
+        window.addEventListener('pointerup', () => { isFiring = false; hud.classList.remove('active'); });
+
         animate();
     </script>
-</body> 
+</body>
 </html>
