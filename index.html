@@ -109,6 +109,12 @@
             color: var(--warning-orange); text-decoration: none; font-weight: bold; transition: all 0.3s ease; margin-top: 15px; font-size: 0.85rem;
         }
         .btn-game:hover { background: var(--warning-orange); color: #000; box-shadow: 0 0 15px var(--warning-orange); }
+
+        /* HOBBY CSS */
+        .hobby-chamber { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding: 15px; background: rgba(0, 255, 255, 0.02); border: 1px dashed #333; border-radius: 8px; }
+        .hobby-atom { padding: 6px 14px; border: 1px solid #444; border-radius: 20px; font-size: 0.75rem; cursor: crosshair; transition: 0.3s; background: #000; user-select: none; }
+        .hobby-atom.ionized { border-color: var(--plasma-cyan); color: #fff; box-shadow: 0 0 15px var(--plasma-cyan); transform: scale(1.1); background: rgba(0, 255, 255, 0.1); }
+        #hobby-readout { width: 100%; margin-top: 12px; font-size: 0.7rem; color: var(--phosphor-green); min-height: 1.2rem; font-family: 'Fira Code', monospace; }
     </style>
 </head>
 <body>
@@ -171,9 +177,9 @@
             <span class="sub-role">Ph.D. | Homi Bhabha National Institute / Institute for Plasma Research</span>
             <span class="date-tag">2018 — 2024</span>
             <ul>
-                <li>Designed a ring cusp ion source for Ar⁺ beams (1-2 keV, 100 mA).</li>
+                <li>Designed a ring cusp ion source for Ar⁺ beams (1-2 keV, 100 mA). </li>
                 <li>Utilized CST Studio for magnetic cusp optimization andOPERA-3D for ion optics design, achieving a low beam divergence of ~6.5°. Conducted transient thermo-structural analysis in ANSYS to design a grid mounting system that limited thermal deformation to <0.1 mm.</li>
-                <li>Engineered a nine-channel Parallel Wire Array (PWA) and a Faraday Cup array (FCA) for real-time, in-situ monitoring of ion beam profiles.</li>
+                <li>Engineered a nine-channel Parallel Wire Array (PWA) and a Faraday Cup array (FCA) for real-time, in-situ monitoring of ion beam profiles. </li>
             </ul>
             <span class="sub-role">M.Tech. Nuclear Engineering | Pandit Deendayal Petroleum University</span>
             <span class="date-tag">2015 — 2017</span>
@@ -218,8 +224,15 @@
                 <li>Assisted in laboratory tours at Daresbury Laboratory, engaging visitors and explaining ongoing research activities.</li>
                 <li>Developed a browser-based interactive game for teaching the concept of electromagnetic confinement in the context of the AEgIS experiment.</li>
             </ul>
-            <p><b>Languages:</b> English, Hindi, Gujarati, Spanish (B2), Russian (A1).</p>
-            <p><b>Hobbies:</b> Playing Chess, Learning languages and musical instruments and travelling.</p>
+
+            <h2 class="module-title">[ 05:HOBBIES ]</h2>
+            <div class="hobby-chamber">
+                <div class="hobby-atom" data-info="STRATEGY: Chess player - Level ELO 1725 ,1900 on chess.com">♟ CHESS</div>
+                <div class="hobby-atom" data-info="POLYGLOT: English, Hindi, Gujarati, Spanish (B2), Russian (A1)">🌍 LANGUAGES</div>
+                <div class="hobby-atom" data-info="INSTRUMENTS: Keyboards, Harmonium, Melodica, Keytar and Guitar">🎵 INSTRUMENTS</div>
+                <div class="hobby-atom" data-info="GEOGRAPHY: Travelled over 12 countries and still counting...">✈️ TRAVELING</div>
+                <div id="hobby-readout">// WAITING_FOR_BEAM_PROBE...</div>
+            
         </div>
     </div>
 
@@ -244,8 +257,8 @@
         let electrons = [];
         let faradayCups = [];
 
-        // Faraday Cup Array (9 channels) with pulse
-        for (let i = 0; i < 9; i++) {
+        // Faraday Cup Array (25 channels) for high resolution
+        for (let i = 0; i < 25; i++) {
             faradayCups.push({
                 y: 30 + i * 16,
                 current: 0,
@@ -410,7 +423,7 @@
             bX += (mX - bX) * 0.15; bY += (mY - bY) * 0.15;
             cursor.style.left = bX + 'px'; cursor.style.top = bY + 'px';
 
-            beamCtx.clearRect(0, 0, beamCanvas.width, beamCanvas.height);
+            beamCtx.clearRect(0, 0, 400, 200);
             eCtx.clearRect(0, 0, eCanvas.width, eCanvas.height);
 
             const divergence = Math.max(2, 45 - (neutCurrent * 4.3));
@@ -429,7 +442,7 @@
                     // Faraday Cup Hit Detection
                     if (p.x >= 385 && p.life > 0.1) {
                         const cupIndex = Math.floor((p.y - 20) / 16);
-                        if (cupIndex >= 0 && cupIndex < 9) {
+                        if (cupIndex >= 0 && cupIndex < 25) {
                             faradayCups[cupIndex].hitsThisFrame++;
                             faradayCups[cupIndex].pulse = 1.0; // trigger glow
                         }
@@ -447,22 +460,21 @@
                 drawDiagnostics(divergence);
                 updateBeamHum();
 
-                // Draw & Update Faraday Cup Array
-                let totalCurrent = 0;
-                let sumY = 0, sumI = 0;
+                // Statistical Divergence Logic (RMS Method)
+                let sumI = 0, sumIY = 0, sumIY2 = 0;
                 beamCtx.font = '9px monospace';
 
                 faradayCups.forEach((cup, i) => {
                     cup.current = cup.current * 0.92 + cup.hitsThisFrame * 0.12;
-                    totalCurrent += cup.current;
-                    if (cup.current > 0) {
-                        sumY += cup.y * cup.current;
-                        sumI += cup.current;
-                    }
+                    
+                    const I = cup.current;
+                    sumI += I;
+                    sumIY += I * cup.y;
+                    sumIY2 += I * (cup.y * cup.y);
 
-                    // Thermal color shift
-                    let r = Math.min(255, cup.current * 80);
-                    let g = Math.min(255, 255 - cup.current * 40);
+                    // Thermal color shift visualization
+                    let r = Math.min(255, I * 80);
+                    let g = Math.min(255, 255 - I * 40);
                     beamCtx.fillStyle = `rgb(${r},${g},0)`;
                     beamCtx.fillRect(385, cup.y, 12, 14);
 
@@ -476,26 +488,30 @@
                         cup.pulse *= 0.82; // fade
                     }
 
-                    // Current label
-                    beamCtx.fillStyle = cup.current > 2 ? '#000' : '#00ff41';
-                    beamCtx.fillText(cup.current.toFixed(1), 400, cup.y + 10);
+                    // Current label (every 3rd cup for clarity if high resolution)
+                    if(i % 3 === 0) {
+                      beamCtx.fillStyle = I > 2 ? '#000' : '#00ff41';
+                      beamCtx.fillText(I.toFixed(1), 400, cup.y + 10);
+                    }
                 });
 
-                // Divergence estimate
-                const outer = (faradayCups[0].current + faradayCups[8].current) / 2;
-                const center = faradayCups[4].current || 0.001;
-                const divEstimate = outer > 0 ? Math.atan(outer / center) * 180 / Math.PI * 2 : 0;
+                // Final Statistical Estimate
+                let divDisplay = 0;
+                if (sumI > 0.05) {
+                    const meanY = sumIY / sumI;
+                    const variance = (sumIY2 / sumI) - (meanY * meanY);
+                    const sigma = Math.sqrt(Math.max(0, variance));
+                    // Geometry conversion: sigma to degrees based on drift distance (300px)
+                    divDisplay = Math.atan(sigma / 300) * (180 / Math.PI) * 4.5;
+                }
 
                 // Total & divergence display
-               // Total & divergence display – fixed positions + better readability
-                    beamCtx.fillStyle = 'rgba(0,0,0,0.6)';           // semi-transparent bg box
-                   
+                beamCtx.fillStyle = 'rgba(0,0,0,0.6)';
+                beamCtx.fillStyle = '#88ff88';
+                beamCtx.fillText(`RMS Div: ${divDisplay.toFixed(2)}°`, 280, 190); 
 
-                    beamCtx.fillStyle = '#88ff88';
-                    beamCtx.fillText(`Div: ${divEstimate.toFixed(1)}°`, 320, 190);  // higher position
-
-                    beamCtx.fillStyle = '#ffffff';
-                    beamCtx.fillText(`Total: ${totalCurrent.toFixed(1)} mA`, 320, 200);  // lower position
+                beamCtx.fillStyle = '#ffffff';
+                beamCtx.fillText(`Total: ${sumI.toFixed(1)} mA`, 280, 200);
             }
 
             requestAnimationFrame(animate);
@@ -514,6 +530,18 @@
             filament.style.boxShadow = neutCurrent > 0 ? `0 0 ${neutCurrent * 8}px var(--warning-orange)` : "none";
         };
 
+        // HOBBY LOGIC: Ionization probe
+        document.querySelectorAll('.hobby-atom').forEach(atom => {
+            atom.addEventListener('mouseenter', () => {
+                atom.classList.add('ionized');
+                document.getElementById('hobby-readout').innerText = `>  ${atom.getAttribute('data-info')}`;
+            });
+            atom.addEventListener('mouseleave', () => {
+                atom.classList.remove('ionized');
+                document.getElementById('hobby-readout').innerText = "// WAITING_FOR_BEAM_PROBE...";
+            });
+        });
+
         window.addEventListener('pointermove', (e) => {
             mX = e.clientX; mY = e.clientY;
             const el = document.elementFromPoint(mX, mY);
@@ -524,6 +552,7 @@
             if(!e.target.closest('#control-panel, .lab-card, .btn-game')) {
                 isFiring = true;
                 hud.classList.add('active');
+                if (audioCtx.state === 'suspended') audioCtx.resume();
                 startBeamHum();
                 updateBeamHum();
             }
