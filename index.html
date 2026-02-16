@@ -279,7 +279,7 @@
             beamHumOsc = audioCtx.createOscillator();
             beamHumGain = audioCtx.createGain();
             beamHumLfo = audioCtx.createOscillator();
-            beamHumOsc.type = 'square';
+            beamHumOsc.type = 'sine';
             beamHumOsc.frequency.setValueAtTime(92, audioCtx.currentTime);
             beamHumLfo.type = 'square';
             beamHumLfo.frequency.setValueAtTime(0.8, audioCtx.currentTime);
