@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bharat Singh Rawat, Ph.D.</title>
+    <script src="parallax.js"></script>
+
     <style>
         :root {
             --plasma-cyan: #00ffff;
@@ -18,7 +20,7 @@
         }
         body, html {
             margin: 0; padding: 0;
-            background-color: var(--vacuum-black);
+            background-color: transparent;
             color: #d1d1d1;
             font-family: 'Fira Code', monospace;
             overflow-x: hidden;
@@ -26,9 +28,9 @@
             touch-action: pan-y;
             cursor: default;
         }
-        #bg-canvas { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+        #bg-canvas { position: fixed; inset: 0; z-index: -2; pointer-events: none; background-color: var(--vacuum-black);}
         #ui-grid {
-            position: fixed; inset: 0;
+            position: relative; width:100% tranistion:transform 0.1s ease-out;
             background-image:
                 linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
@@ -234,6 +236,8 @@
                 <div class="hobby-atom" data-info="INSTRUMENTS: Keyboards, Harmonium, Melodica, Keytar and Guitar">🎵 INSTRUMENTS</div>
                 <div class="hobby-atom" data-info="GEOGRAPHY: Travelled over 12 countries and still counting...">✈️ TRAVELING</div>
                 <div id="hobby-readout">// WAITING_FOR_BEAM_PROBE...</div>
+
+
             
         </div>
     </div>
