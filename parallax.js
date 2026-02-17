@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-  console.log("CERN Magnetic Confinement System: ONLINE");
+  console.log("Background ONLINE");
 
   // ─── CONFIGURATION & PHYSICS CONSTANTS ───
-  const maxTilt = 8;
+  const maxTilt = 1;
   const transition = 'transform 0.4s cubic-bezier(0.23, 1, 0.32, 1)';
   const gridSpacing = 70;      // Distance between grid lines
-  const warpRadius = 100;       // How far the "magnetic field" reach is
+  const warpRadius = 500;       // How far the "magnetic field" reach is
   const warpStrength = 55;      // Intensity of the line bending
-  const gridOpacity = 0.1;     // Visibility of the grid lines
+  const gridOpacity = 0.3;     // Visibility of the grid lines
 
   let mouse = { x: 0, y: 0, targetX: 0, targetY: 0 };
   let stars = [], pulses = [], dataBits = [];
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stars = Array.from({ length: 200 }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      size: Math.random() * 1.8,
+      size: Math.random() * 5+3,
       alpha: Math.random(),
       speed: Math.random() * 0.01 + 0.005
     }));

@@ -15,7 +15,7 @@ const initJukebox = () => {
     <div id="jukebox-card" style="position: fixed; top: 100px; left: 20px; width: 120px; z-index: 999999; background: rgba(5,5,10,0.98); border: 1px solid var(--warning-orange); border-left: 3px solid var(--warning-orange); padding: 12px; pointer-events: all; cursor: default; box-shadow: 0 0 20px rgba(0,0,0,0.8); user-select: none;">
         
         <div id="jukebox-header" style="color:var(--warning-orange); font-size:0.55rem; font-weight:bold; margin-bottom:10px; display:flex; justify-content:space-between; cursor: move; border-bottom: 1px solid #333; padding-bottom: 5px;">
-            <span>[ JUKE BOX ]</span>
+            <span>[ MY PLAYLIST ]</span>
             <span>☊</span>
         </div>
 
