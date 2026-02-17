@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bharat Singh Rawat, Ph.D.</title>
     <script src="parallax.js"></script>
+    <script src="jukebox.js">defer></script>
 
     <style>
         :root {
@@ -552,6 +553,7 @@
         window.addEventListener('pointermove', (e) => {
             mX = e.clientX; mY = e.clientY;
             const el = document.elementFromPoint(mX, mY);
+	    cursor.classList.toggle('hidden', !!el?.closest('a, button, input, #control-panel, .btn-game, #jukebox-card, .btn-audio'));
             cursor.classList.toggle('hidden', !!el?.closest('a, button, input, #control-panel, .btn-game'));
         });
 
